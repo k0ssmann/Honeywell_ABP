@@ -1,40 +1,35 @@
 #include <honeywell_abp.h>
 
-Honeywell_ABP::Honeywell_ABP(uint16_t address)
+Honeywell_ABP::Honeywell_ABP(uint16_t address, int p_min, int p_max)
 {
     address_ = address;
+    p_min_ = p_min;
+    p_max_ = p_max;
 }
 
-void Honeywell_ABP::getData()
+void Honeywell_ABP::joinBytes(uint8_t byte1, uint8_t byte2)
+{
+    joinedBytes_ = byte1_ << 8 | byte2_;
+}
+
+void Honeywell_ABP::requestBytes()
 {
     Wire.requestFrom(address_, (uint8_t) 2);
     byte1_ = Wire.read();
     byte2_ = Wire.read();
+    status_ = byte1_ >> 6;
 }
 
-
-/* 
-honeywell_abp::honeywell_abp(uint8_t slaveAdr, float pressureMin, float pressureMax)
+void Honeywell_ABP::calcPressure(uint16_t bridge_data)
 {
-    abpAddress = slaveAdr;
-    p_min = pressureMin;
-    p_max = pressureMax;
+    pressure_ = (bridge_data - output_min_) * (p_max_ - p_min_) / (p_max_ - p_min_) + output_min_;
 }
 
-float honeywell_abp::getPressure(uint16_t raw)
+float Honeywell_ABP::getPressure()
 {
-    return (raw - output_min)*(p_max - p_min)/(output_max - output_min) + p_min;
-}
-void honeywell_abp::getData()
-{
-    Wire.requestFrom(abpAddress, (uint8_t) 2);
-    while(Wire.available())
-    {
-        uint8_t byte1 = Wire.read();
-        uint8_t byte2 = Wire.read();
-    }
+    requestBytes();
+    joinBytes(byte1_, byte2_);
+    calcPressure(joinedBytes_);
 
-    status = byte1 & 0xC0;
-    bridge_data = ((byte1 & 0x3F) << 2) | byte2;
-    pressure = getPressure(bridge_data);
-} */
+    return pressure_;
+}
