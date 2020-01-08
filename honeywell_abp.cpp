@@ -7,9 +7,9 @@ Honeywell_ABP::Honeywell_ABP(uint16_t address, int p_min, int p_max)
     p_max_ = p_max;
 }
 
-void Honeywell_ABP::joinBytes(uint8_t byte1, uint8_t byte2)
+void Honeywell_ABP::joinBytes()
 {
-    joinedBytes_ = byte1_ << 8 | byte2_;
+    joinedBytes_ = (byte1_ << 8 | byte2_) & 0x3FFF;
 }
 
 void Honeywell_ABP::requestBytes()
@@ -20,15 +20,15 @@ void Honeywell_ABP::requestBytes()
     status_ = byte1_ >> 6;
 }
 
-void Honeywell_ABP::calcPressure(uint16_t bridge_data)
+void Honeywell_ABP::calcPressure(uint16_t output)
 {
-    pressure_ = (bridge_data - output_min_) * (p_max_ - p_min_) / (p_max_ - p_min_) + output_min_;
+    pressure_ = (output - output_min_) * (p_max_ - p_min_) / (output_max_ - output_min_) + p_min_;
 }
 
 float Honeywell_ABP::getPressure()
 {
     requestBytes();
-    joinBytes(byte1_, byte2_);
+    joinBytes();
     calcPressure(joinedBytes_);
 
     return pressure_;

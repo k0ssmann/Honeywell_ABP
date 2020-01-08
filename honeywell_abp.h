@@ -9,7 +9,7 @@ class Honeywell_ABP {
 
         Honeywell_ABP(uint16_t address, int p_min, int p_max);
         void requestBytes();
-        void joinBytes(uint8_t byte1, uint8_t byte2);
+        void joinBytes();
         void calcPressure(uint16_t bridge_data);
 
         uint8_t getByte1() {return byte1_;}; 
