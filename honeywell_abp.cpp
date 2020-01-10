@@ -1,35 +1,53 @@
 #include <honeywell_abp.h>
 
-Honeywell_ABP::Honeywell_ABP(uint16_t address, int p_min, int p_max)
+Honeywell_ABP::Honeywell_ABP(uint16_t Address, int Pmin, int Pmax)
 {
-    address_ = address;
-    p_min_ = p_min;
-    p_max_ = p_max;
+    mAddress = Address;
+    mPmin = Pmin;
+    mPmax = Pmax;
 }
 
-void Honeywell_ABP::joinBytes()
+bool Honeywell_ABP::getData()
 {
-    joinedBytes_ = (byte1_ << 8 | byte2_) & 0x3FFF;
+    int n;
+    n = Wire.requestFrom(mAddress, (uint8_t) 4);
+
+    if(n == 4) // Did we receive the number of requested bytes?
+    {
+        for(int i = 0; i < 4; i++)
+        {
+            buffer[i] = Wire.read();
+        }
+        mStatus = buffer[0] >> 6;
+        mBridgeData = (buffer[0] << 8 | buffer[1]) & 0x3FFF;
+        mTemperatureData = ((buffer[2] << 8) | (buffer[3] >> 5)) & 0x7FF;
+        mPressure = OutputFunction(mBridgeData);
+        mTemperature = ConversionFunction(mTemperatureData);
+
+        return true;
+    }
+
+    return false;
 }
 
-void Honeywell_ABP::requestBytes()
+float Honeywell_ABP::OutputFunction(uint16_t output)
 {
-    Wire.requestFrom(address_, (uint8_t) 2);
-    byte1_ = Wire.read();
-    byte2_ = Wire.read();
-    status_ = byte1_ >> 6;
+    return (output - mOutputMin) * (mPmax - mPmin) / (mOutputMax - mOutputMin) + mPmin;
 }
 
-void Honeywell_ABP::calcPressure(uint16_t output)
+float Honeywell_ABP::ConversionFunction(uint16_t output)
 {
-    pressure_ = (output - output_min_) * (p_max_ - p_min_) / (output_max_ - output_min_) + p_min_;
+    return (output / 2047 * 200) - 50;
 }
 
-float Honeywell_ABP::getPressure()
+const char* Honeywell_ABP::getStatus() const
 {
-    requestBytes();
-    joinBytes();
-    calcPressure(joinedBytes_);
-
-    return pressure_;
+    switch(mStatus)
+    {
+        case 0: return "Status Code 0: Normal operation.";
+        case 1: return "Status Code 1: Device in command mode";
+        case 2: return "Status Code 2: Stale data.";
+        case 3: return "Status Code 3: Diagnostic condition.";
+        default: return "Unknown error";
+    }
 }

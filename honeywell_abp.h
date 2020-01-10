@@ -8,32 +8,29 @@ class Honeywell_ABP {
     public:
 
         Honeywell_ABP(uint16_t address, int p_min, int p_max);
-        void requestBytes();
-        void joinBytes();
-        void calcPressure(uint16_t bridge_data);
-
-        uint8_t getByte1() {return byte1_;}; 
-        uint8_t getByte2() {return byte2_;};
-        uint8_t getStatus() {return status_;};
-        uint16_t getJoinedBytes() {return joinedBytes_;};
-        float getPressure();
-
+        bool getData();
+        const char* getStatus() const;
+        float getPressure() {return mPressure;};
+        float getTemperature() {return mTemperature;};
+        float OutputFunction(uint16_t output);
+        float ConversionFunction(uint16_t output);
 
     private:
 
-            uint16_t address_;
-            uint8_t byte1_;
-            uint8_t byte2_;
-            uint8_t status_;
-            uint16_t joinedBytes_;
+            uint16_t mAddress;
+            uint8_t buffer[4];
+            uint8_t mStatus;
+            uint16_t mBridgeData;
+            uint16_t mTemperatureData;
 
-            int p_min_;
-            int p_max_;
+            int mPmin;
+            int mPmax;
 
-            float pressure_;
+            float mPressure;
+            float mTemperature;
 
-            uint16_t output_min_ = 0x0666;
-            uint16_t output_max_ = 0x399A;
+            uint16_t mOutputMin = 0x0666;
+            uint16_t mOutputMax = 0x399A;
 
 };
 
